@@ -105,25 +105,25 @@ impl Engine {
                                 Vector::new(
                                     x - physical_bounds.position().x
                                         - (shadow.offset.x
-                                        * transformation.scale_factor())
+                                            * transformation.scale_factor())
                                         - half_width,
                                     y - physical_bounds.position().y
                                         - (shadow.offset.y
-                                        * transformation.scale_factor())
+                                            * transformation.scale_factor())
                                         - half_height,
                                 ),
                                 size,
                                 &radii,
                             )
-                                .max(0.0);
+                            .max(0.0);
                             let shadow_alpha = 1.0
                                 - smoothstep(
-                                -shadow.blur_radius
-                                    * transformation.scale_factor(),
-                                shadow.blur_radius
-                                    * transformation.scale_factor(),
-                                shadow_distance,
-                            );
+                                    -shadow.blur_radius
+                                        * transformation.scale_factor(),
+                                    shadow.blur_radius
+                                        * transformation.scale_factor(),
+                                    shadow_distance,
+                                );
 
                             let mut color = into_color(shadow.color);
                             color.apply_opacity(shadow_alpha);
@@ -177,7 +177,7 @@ impl Engine {
                                         stop.color.r,
                                         stop.color.a,
                                     )
-                                        .expect("Create color"),
+                                    .expect("Create color"),
                                 )
                             })
                             .collect();
@@ -199,7 +199,7 @@ impl Engine {
                             tiny_skia::SpreadMode::Pad,
                             tiny_skia::Transform::identity(),
                         )
-                            .expect("Create linear gradient")
+                        .expect("Create linear gradient")
                     }
                 },
                 anti_alias: true,
@@ -233,8 +233,8 @@ impl Engine {
                     is_simple_border = false;
                     0.0
                 }
-                    .min(border_bounds.width / 2.0)
-                    .min(border_bounds.height / 2.0);
+                .min(border_bounds.width / 2.0)
+                .min(border_bounds.height / 2.0);
             }
 
             // Stroking a path works well in this case
@@ -265,13 +265,13 @@ impl Engine {
                     quad.bounds.width as u32,
                     quad.bounds.height as u32,
                 )
-                    .unwrap();
+                .unwrap();
 
                 let mut quad_mask = tiny_skia::Mask::new(
                     quad.bounds.width as u32,
                     quad.bounds.height as u32,
                 )
-                    .unwrap();
+                .unwrap();
 
                 let zero_bounds = Rectangle {
                     x: 0.0,
@@ -696,7 +696,7 @@ fn rounded_rectangle(
                 bounds.width,
                 bounds.height,
             )
-                .expect("Build quad rectangle"),
+            .expect("Build quad rectangle"),
         );
     }
 
@@ -711,7 +711,7 @@ fn rounded_rectangle(
             bounds.y + bounds.height / 2.0,
             top_left,
         )
-            .expect("Build circle path");
+        .expect("Build circle path");
     }
 
     let mut builder = tiny_skia::PathBuilder::new();
@@ -858,7 +858,7 @@ pub fn adjust_clip_mask(clip_mask: &mut tiny_skia::Mask, bounds: Rectangle) {
                 bounds.width,
                 bounds.height,
             )
-                .unwrap(),
+            .unwrap(),
         );
 
         builder.finish().unwrap()
