@@ -190,7 +190,7 @@ fn draw(
     clip_mask: Option<&tiny_skia::Mask>,
     transformation: Transformation,
 ) {
-    let position = position * transformation;
+    let scale_factor = transformation.scale_factor();
 
     let mut swash = cosmic_text::SwashCache::new();
 
@@ -198,7 +198,7 @@ fn draw(
         for glyph in run.glyphs {
             let physical_glyph = glyph.physical(
                 (position.x, position.y),
-                transformation.scale_factor(),
+                scale_factor,
             );
 
             if let Some((buffer, placement)) = glyph_cache.allocate(
@@ -226,7 +226,7 @@ fn draw(
 
                 let x = physical_glyph.x + placement.left;
                 let y = physical_glyph.y - placement.top
-                    + (run.line_y * transformation.scale_factor()).round() as i32;
+                    + run.line_y.round() as i32;
 
                 pixels.draw_pixmap(
                     x,
