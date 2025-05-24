@@ -217,13 +217,18 @@ fn draw(
                     top: (placement.top as f32 * scale_factor) as i32,
                 };
 
+                // Add this check before creating the pixmap
+                if scaled_placement.width == 0 || scaled_placement.height == 0 {
+                    continue;
+                }
+
                 let pixmap = tiny_skia::PixmapRef::from_bytes(
                     buffer,
                     scaled_placement.width,
                     scaled_placement.height,
                 )
                     .expect("Create glyph pixel map");
-
+                
                 let opacity = color.a
                     * glyph
                     .color_opt
