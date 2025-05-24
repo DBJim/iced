@@ -190,15 +190,17 @@ fn draw(
     clip_mask: Option<&tiny_skia::Mask>,
     transformation: Transformation,
 ) {
-    let position = position * transformation;
+    let scale_factor = transformation.scale_factor();
 
+    // Position is already scaled by the caller, so we don't scale it again
     let mut swash = cosmic_text::SwashCache::new();
 
     for run in buffer.layout_runs() {
         for glyph in run.glyphs {
+            // Apply DPI scaling to glyph metrics
             let physical_glyph = glyph.physical(
                 (position.x, position.y),
-                transformation.scale_factor(),
+                scale_factor,
             );
 
             if let Some((buffer, placement)) = glyph_cache.allocate(
@@ -207,24 +209,35 @@ fn draw(
                 font_system,
                 &mut swash,
             ) {
+                // Scale the placement metrics according to DPI
+                let scaled_placement = cosmic_text::Placement {
+                    width: (placement.width as f32 * scale_factor) as u32,
+                    height: (placement.height as f32 * scale_factor) as u32,
+                    left: (placement.left as f32 * scale_factor) as i32,
+                    top: (placement.top as f32 * scale_factor) as i32,
+                };
+
                 let pixmap = tiny_skia::PixmapRef::from_bytes(
                     buffer,
-                    placement.width,
-                    placement.height,
+                    scaled_placement.width,
+                    scaled_placement.height,
                 )
-                .expect("Create glyph pixel map");
+                    .expect("Create glyph pixel map");
 
                 let opacity = color.a
                     * glyph
-                        .color_opt
-                        .map(|c| c.a() as f32 / 255.0)
-                        .unwrap_or(1.0);
+                    .color_opt
+                    .map(|c| c.a() as f32 / 255.0)
+                    .unwrap_or(1.0);
+
+                // Apply DPI scaling to glyph positioning
+                let x = physical_glyph.x + scaled_placement.left;
+                let y = physical_glyph.y - scaled_placement.top
+                    + (run.line_y * scale_factor).round() as i32;
 
                 pixels.draw_pixmap(
-                    physical_glyph.x + placement.left,
-                    physical_glyph.y - placement.top
-                        + (run.line_y * transformation.scale_factor()).round()
-                            as i32,
+                    x,
+                    y,
                     pixmap,
                     &tiny_skia::PixmapPaint {
                         opacity,
