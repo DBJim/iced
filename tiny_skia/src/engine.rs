@@ -324,6 +324,7 @@ impl Engine {
         }
     }
 
+
     pub fn draw_text(
         &mut self,
         text: &Text,
@@ -332,14 +333,6 @@ impl Engine {
         clip_mask: &mut tiny_skia::Mask,
         clip_bounds: Rectangle,
     ) {
-        let scale_factor = transformation.scale_factor();
-        let scaled_clip_bounds = Rectangle {
-            x: clip_bounds.x * scale_factor,
-            y: clip_bounds.y * scale_factor,
-            width: clip_bounds.width * scale_factor,
-            height: clip_bounds.height * scale_factor,
-        };
-
         match text {
             Text::Paragraph {
                 paragraph,
@@ -349,51 +342,29 @@ impl Engine {
                 transformation: local_transformation,
             } => {
                 let transformation = transformation * *local_transformation;
-                
-                // Scale local clip bounds with DPI
-                let scaled_local_bounds = Rectangle {
-                    x: local_clip_bounds.x * scale_factor,
-                    y: local_clip_bounds.y * scale_factor,
-                    width: local_clip_bounds.width * scale_factor,
-                    height: local_clip_bounds.height * scale_factor,
-                };
-                
-                let Some(effective_clip_bounds) = scaled_local_bounds.intersection(&scaled_clip_bounds) else {
-                    return;
-                };
 
-                // Scale position and bounds with DPI
-                let scaled_position = Point::new(
-                    position.x * scale_factor,
-                    position.y * scale_factor,
-                );
-                
-                let physical_bounds = Rectangle::new(scaled_position, {
-                    let min_bounds = paragraph.min_bounds;
+                let physical_bounds = Rectangle::new(
+                    *position,
                     Size::new(
-                        min_bounds.width * scale_factor,
-                        min_bounds.height * scale_factor,
-                    )
-                });
+                        paragraph.min_bounds.width,
+                        paragraph.min_bounds.height,
+                    ),
+                ) * transformation;
+
+                let effective_clip_bounds = *local_clip_bounds * transformation;
 
                 if !effective_clip_bounds.intersects(&physical_bounds) {
                     return;
                 }
 
-                let clip_mask = match physical_bounds.is_within(&effective_clip_bounds) {
-                    true => None,
-                    false => {
-                        adjust_clip_mask(clip_mask, effective_clip_bounds);
-                        Some(clip_mask as &_)
-                    }
-                };
+                adjust_clip_mask(clip_mask, effective_clip_bounds);
 
                 self.text_pipeline.draw_paragraph(
                     paragraph,
-                    scaled_position,
+                    *position,
                     *color,
                     pixels,
-                    clip_mask,
+                    Some(clip_mask),
                     transformation,
                 );
             }
@@ -405,51 +376,29 @@ impl Engine {
                 transformation: local_transformation,
             } => {
                 let transformation = transformation * *local_transformation;
-                
-                // Scale local clip bounds with DPI
-                let scaled_local_bounds = Rectangle {
-                    x: local_clip_bounds.x * scale_factor,
-                    y: local_clip_bounds.y * scale_factor,
-                    width: local_clip_bounds.width * scale_factor,
-                    height: local_clip_bounds.height * scale_factor,
-                };
-                
-                let Some(effective_clip_bounds) = scaled_local_bounds.intersection(&scaled_clip_bounds) else {
-                    return;
-                };
 
-                // Scale position and bounds with DPI
-                let scaled_position = Point::new(
-                    position.x * scale_factor,
-                    position.y * scale_factor,
-                );
-                
-                let physical_bounds = Rectangle::new(scaled_position, {
-                    let bounds = editor.bounds;
+                let physical_bounds = Rectangle::new(
+                    *position,
                     Size::new(
-                        bounds.width * scale_factor,
-                        bounds.height * scale_factor,
-                    )
-                });
+                        editor.bounds.width,
+                        editor.bounds.height,
+                    ),
+                ) * transformation;
+
+                let effective_clip_bounds = *local_clip_bounds * transformation;
 
                 if !effective_clip_bounds.intersects(&physical_bounds) {
                     return;
                 }
 
-                let clip_mask = match physical_bounds.is_within(&effective_clip_bounds) {
-                    true => None,
-                    false => {
-                        adjust_clip_mask(clip_mask, effective_clip_bounds);
-                        Some(clip_mask as &_)
-                    }
-                };
+                adjust_clip_mask(clip_mask, effective_clip_bounds);
 
                 self.text_pipeline.draw_editor(
                     editor,
-                    scaled_position,
+                    *position,
                     *color,
                     pixels,
-                    clip_mask,
+                    Some(clip_mask),
                     transformation,
                 );
             }
@@ -465,55 +414,27 @@ impl Engine {
                 shaping,
                 clip_bounds: local_clip_bounds,
             } => {
-                // Scale bounds and clip bounds with DPI
-                let scaled_bounds = Rectangle {
-                    x: bounds.x * scale_factor,
-                    y: bounds.y * scale_factor,
-                    width: bounds.width * scale_factor,
-                    height: bounds.height * scale_factor,
-                };
-                
-                let scaled_local_bounds = Rectangle {
-                    x: local_clip_bounds.x * scale_factor,
-                    y: local_clip_bounds.y * scale_factor,
-                    width: local_clip_bounds.width * scale_factor,
-                    height: local_clip_bounds.height * scale_factor,
-                };
-
-                let Some(effective_clip_bounds) = scaled_local_bounds.intersection(&scaled_clip_bounds) else {
-                    return;
-                };
-
-                let physical_bounds = scaled_bounds * transformation;
+                let physical_bounds = *bounds * transformation;
+                let effective_clip_bounds = *local_clip_bounds * transformation;
 
                 if !effective_clip_bounds.intersects(&physical_bounds) {
                     return;
                 }
 
-                let clip_mask = match physical_bounds.is_within(&effective_clip_bounds) {
-                    true => None,
-                    false => {
-                        adjust_clip_mask(clip_mask, effective_clip_bounds);
-                        Some(clip_mask as &_)
-                    }
-                };
-
-                // Scale size and line height with DPI
-                let scaled_size = *size * scale_factor;
-                let scaled_line_height = *line_height * scale_factor;
+                adjust_clip_mask(clip_mask, effective_clip_bounds);
 
                 self.text_pipeline.draw_cached(
                     content,
-                    scaled_bounds,
+                    *bounds,
                     *color,
-                    scaled_size,
-                    scaled_line_height,
+                    *size,
+                    *line_height,
                     *font,
                     *align_x,
                     *align_y,
                     *shaping,
                     pixels,
-                    clip_mask,
+                    Some(clip_mask),
                     transformation,
                 );
             }
@@ -528,33 +449,26 @@ impl Engine {
                 let transformation = transformation * *local_transformation;
                 let (width, height) = buffer.size();
 
-                // Scale position and dimensions with DPI
-                let scaled_position = Point::new(
-                    raw.position.x * scale_factor,
-                    raw.position.y * scale_factor,
-                );
-
                 let physical_bounds = Rectangle::new(
-                    scaled_position,
+                    raw.position,
                     Size::new(
-                        width.unwrap_or(scaled_clip_bounds.width),
-                        height.unwrap_or(scaled_clip_bounds.height),
+                        width.unwrap_or(clip_bounds.width),
+                        height.unwrap_or(clip_bounds.height),
                     ),
                 ) * transformation;
 
-                if !scaled_clip_bounds.intersects(&physical_bounds) {
+                if !clip_bounds.intersects(&physical_bounds) {
                     return;
                 }
 
-                let clip_mask = (!physical_bounds.is_within(&scaled_clip_bounds))
-                    .then_some(clip_mask as &_);
+                adjust_clip_mask(clip_mask, clip_bounds);
 
                 self.text_pipeline.draw_raw(
                     &buffer,
-                    scaled_position,
+                    raw.position,
                     raw.color,
                     pixels,
-                    clip_mask,
+                    Some(clip_mask),
                     transformation,
                 );
             }

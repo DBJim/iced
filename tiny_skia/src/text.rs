@@ -191,14 +191,18 @@ fn draw(
     transformation: Transformation,
 ) {
     let scale_factor = transformation.scale_factor();
+    let scaled_position = Point::new(
+        position.x * scale_factor,
+        position.y * scale_factor,
+    );
 
     let mut swash = cosmic_text::SwashCache::new();
 
     for run in buffer.layout_runs() {
         for glyph in run.glyphs {
             let physical_glyph = glyph.physical(
-                (position.x, position.y),
-                scale_factor,
+                (scaled_position.x, scaled_position.y),
+                1.0, // Use 1.0 since we already scaled the position
             );
 
             if let Some((buffer, placement)) = glyph_cache.allocate(
@@ -224,9 +228,9 @@ fn draw(
                     .map(|c| c.a() as f32 / 255.0)
                     .unwrap_or(1.0);
 
+                // Correct glyph positioning with scaled line height
                 let x = physical_glyph.x + placement.left;
-                let y = physical_glyph.y - placement.top
-                    + run.line_y.round() as i32;
+                let y = physical_glyph.y - placement.top + run.line_y as i32;
 
                 pixels.draw_pixmap(
                     x,
