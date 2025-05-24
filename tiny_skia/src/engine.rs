@@ -829,8 +829,11 @@ fn rounded_box_sdf(
 
     (x.powf(2.0) + y.powf(2.0)).sqrt() - radius
 }
-
 pub fn adjust_clip_mask(clip_mask: &mut tiny_skia::Mask, bounds: Rectangle) {
+    if bounds.width <= 0.0 || bounds.height <= 0.0 {
+        return;
+    }
+
     clip_mask.clear();
 
     let path = {
@@ -842,7 +845,7 @@ pub fn adjust_clip_mask(clip_mask: &mut tiny_skia::Mask, bounds: Rectangle) {
                 bounds.width,
                 bounds.height,
             )
-            .unwrap(),
+                .unwrap(),
         );
 
         builder.finish().unwrap()
