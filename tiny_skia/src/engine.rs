@@ -1,6 +1,6 @@
 use crate::Primitive;
 use crate::core::renderer::Quad;
-use crate::core::{Background, Color, Gradient, Point, Rectangle, Size, Transformation, Vector};
+use crate::core::{Background, Color, Gradient, Rectangle, Size, Transformation, Vector};
 use crate::graphics::{Image, Text};
 use crate::text;
 
