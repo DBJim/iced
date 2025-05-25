@@ -33,7 +33,6 @@ impl Engine {
         background: &Background,
         transformation: Transformation,
         pixels: &mut tiny_skia::PixmapMut<'_>,
-        clip_mask: &mut tiny_skia::Mask,
         clip_bounds: Rectangle,
     ) {
         debug_assert!(
@@ -330,7 +329,6 @@ impl Engine {
         text: &Text,
         transformation: Transformation,
         pixels: &mut tiny_skia::PixmapMut<'_>,
-        clip_mask: &mut tiny_skia::Mask,
         clip_bounds: Rectangle,
     ) {
         match text {
@@ -466,27 +464,10 @@ impl Engine {
         primitive: &Primitive,
         transformation: Transformation,
         pixels: &mut tiny_skia::PixmapMut<'_>,
-        clip_mask: &mut tiny_skia::Mask,
-        layer_bounds: Rectangle,
     ) {
         match primitive {
             Primitive::Fill { path, paint, rule } => {
-                let physical_bounds = {
-                    let bounds = path.bounds();
-
-                    Rectangle {
-                        x: bounds.x(),
-                        y: bounds.y(),
-                        width: bounds.width(),
-                        height: bounds.height(),
-                    } * transformation
-                };
-
-                let Some(clip_bounds) =
-                    layer_bounds.intersection(&physical_bounds)
-                else {
-                    return;
-                };
+               
 
                 let clip_mask = None;
 
@@ -503,7 +484,7 @@ impl Engine {
                 paint,
                 stroke,
             } => {
-                let physical_bounds = {
+                {
                     let bounds = path.bounds();
 
                     Rectangle {
@@ -512,12 +493,6 @@ impl Engine {
                         width: bounds.width(),
                         height: bounds.height(),
                     } * transformation
-                };
-
-                let Some(clip_bounds) =
-                    layer_bounds.intersection(&physical_bounds)
-                else {
-                    return;
                 };
 
                 let clip_mask = None;
