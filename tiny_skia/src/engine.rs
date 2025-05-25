@@ -51,8 +51,7 @@ impl Engine {
             return;
         }
 
-        let clip_mask = (!physical_bounds.is_within(&clip_bounds))
-            .then_some(clip_mask as &_);
+        let clip_mask = None;
 
         let transform = into_transform(transformation);
 
@@ -352,8 +351,7 @@ impl Engine {
                     return;
                 }
 
-                let clip_mask = (!physical_bounds.is_within(&clip_bounds))
-                    .then_some(clip_mask as &_);
+                let clip_mask = None;
 
                 self.text_pipeline.draw_paragraph(
                     paragraph,
@@ -380,8 +378,7 @@ impl Engine {
                     return;
                 }
 
-                let clip_mask = (!physical_bounds.is_within(&clip_bounds))
-                    .then_some(clip_mask as &_);
+                let clip_mask = None;
 
                 self.text_pipeline.draw_editor(
                     editor,
@@ -410,8 +407,7 @@ impl Engine {
                     return;
                 }
 
-                let clip_mask = (!physical_bounds.is_within(&clip_bounds))
-                    .then_some(clip_mask as &_);
+                let clip_mask = None;
 
                 self.text_pipeline.draw_cached(
                     content,
@@ -451,8 +447,7 @@ impl Engine {
                     return;
                 }
 
-                let clip_mask = (!physical_bounds.is_within(&clip_bounds))
-                    .then_some(clip_mask as &_);
+                let clip_mask = None;
 
                 self.text_pipeline.draw_raw(
                     &buffer,
@@ -493,8 +488,7 @@ impl Engine {
                     return;
                 };
 
-                let clip_mask =
-                    (physical_bounds != clip_bounds).then_some(clip_mask as &_);
+                let clip_mask = None;
 
                 pixels.fill_path(
                     path,
@@ -526,8 +520,7 @@ impl Engine {
                     return;
                 };
 
-                let clip_mask =
-                    (physical_bounds != clip_bounds).then_some(clip_mask as &_);
+                let clip_mask = None;
 
                 pixels.stroke_path(
                     path,
