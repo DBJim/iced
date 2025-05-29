@@ -121,6 +121,7 @@ impl Renderer {
                             background,
                             Transformation::scale(scale_factor),
                             pixels,
+                            clip_mask,
                             clip_bounds,
                         );
                     }
@@ -146,6 +147,8 @@ impl Renderer {
                                 group.transformation()
                                     * Transformation::scale(scale_factor),
                                 pixels,
+                                clip_mask,
+                                clip_bounds,
                             );
                         }
 
@@ -181,6 +184,7 @@ impl Renderer {
                                 group.transformation()
                                     * Transformation::scale(scale_factor),
                                 pixels,
+                                clip_mask,
                                 clip_bounds,
                             );
                         }
