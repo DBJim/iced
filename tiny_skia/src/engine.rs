@@ -33,6 +33,7 @@ impl Engine {
         background: &Background,
         transformation: Transformation,
         pixels: &mut tiny_skia::PixmapMut<'_>,
+        clip_mask: &mut tiny_skia::Mask,
         clip_bounds: Rectangle,
     ) {
         debug_assert!(
@@ -50,7 +51,8 @@ impl Engine {
             return;
         }
 
-        let clip_mask = None;
+        let clip_mask = (!physical_bounds.is_within(&clip_bounds))
+            .then_some(clip_mask as &_);
 
         let transform = into_transform(transformation);
 
@@ -329,6 +331,7 @@ impl Engine {
         text: &Text,
         transformation: Transformation,
         pixels: &mut tiny_skia::PixmapMut<'_>,
+        clip_mask: &mut tiny_skia::Mask,
         clip_bounds: Rectangle,
     ) {
         match text {
@@ -336,10 +339,15 @@ impl Engine {
                 paragraph,
                 position,
                 color,
-                clip_bounds: _, // TODO
+                clip_bounds: local_clip_bounds,
                 transformation: local_transformation,
             } => {
                 let transformation = transformation * *local_transformation;
+                let Some(clip_bounds) = clip_bounds
+                    .intersection(&(*local_clip_bounds * transformation))
+                else {
+                    return;
+                };
 
                 let physical_bounds =
                     Rectangle::new(*position, paragraph.min_bounds)
@@ -349,7 +357,13 @@ impl Engine {
                     return;
                 }
 
-                let clip_mask = None;
+                let clip_mask = match physical_bounds.is_within(&clip_bounds) {
+                    true => None,
+                    false => {
+                        adjust_clip_mask(clip_mask, clip_bounds);
+                        Some(clip_mask as &_)
+                    }
+                };
 
                 self.text_pipeline.draw_paragraph(
                     paragraph,
@@ -364,10 +378,15 @@ impl Engine {
                 editor,
                 position,
                 color,
-                clip_bounds: _, // TODO
+                clip_bounds: local_clip_bounds,
                 transformation: local_transformation,
             } => {
                 let transformation = transformation * *local_transformation;
+                let Some(clip_bounds) = clip_bounds
+                    .intersection(&(*local_clip_bounds * transformation))
+                else {
+                    return;
+                };
 
                 let physical_bounds =
                     Rectangle::new(*position, editor.bounds) * transformation;
@@ -376,7 +395,13 @@ impl Engine {
                     return;
                 }
 
-                let clip_mask = None;
+                let clip_mask = match physical_bounds.is_within(&clip_bounds) {
+                    true => None,
+                    false => {
+                        adjust_clip_mask(clip_mask, clip_bounds);
+                        Some(clip_mask as &_)
+                    }
+                };
 
                 self.text_pipeline.draw_editor(
                     editor,
@@ -397,15 +422,21 @@ impl Engine {
                 align_x,
                 align_y,
                 shaping,
-                clip_bounds: text_bounds, // TODO
+                clip_bounds: local_clip_bounds,
             } => {
-                let physical_bounds = *text_bounds * transformation;
+                let physical_bounds = *local_clip_bounds * transformation;
 
                 if !clip_bounds.intersects(&physical_bounds) {
                     return;
                 }
 
-                let clip_mask = None;
+                let clip_mask = match physical_bounds.is_within(&clip_bounds) {
+                    true => None,
+                    false => {
+                        adjust_clip_mask(clip_mask, clip_bounds);
+                        Some(clip_mask as &_)
+                    }
+                };
 
                 self.text_pipeline.draw_cached(
                     content,
@@ -445,7 +476,8 @@ impl Engine {
                     return;
                 }
 
-                let clip_mask = None;
+                let clip_mask = (!physical_bounds.is_within(&clip_bounds))
+                    .then_some(clip_mask as &_);
 
                 self.text_pipeline.draw_raw(
                     &buffer,
@@ -464,12 +496,30 @@ impl Engine {
         primitive: &Primitive,
         transformation: Transformation,
         pixels: &mut tiny_skia::PixmapMut<'_>,
+        clip_mask: &mut tiny_skia::Mask,
+        layer_bounds: Rectangle,
     ) {
         match primitive {
             Primitive::Fill { path, paint, rule } => {
-               
+                let physical_bounds = {
+                    let bounds = path.bounds();
 
-                let clip_mask = None;
+                    Rectangle {
+                        x: bounds.x(),
+                        y: bounds.y(),
+                        width: bounds.width(),
+                        height: bounds.height(),
+                    } * transformation
+                };
+
+                let Some(clip_bounds) =
+                    layer_bounds.intersection(&physical_bounds)
+                else {
+                    return;
+                };
+
+                let clip_mask =
+                    (physical_bounds != clip_bounds).then_some(clip_mask as &_);
 
                 pixels.fill_path(
                     path,
@@ -484,7 +534,7 @@ impl Engine {
                 paint,
                 stroke,
             } => {
-                {
+                let physical_bounds = {
                     let bounds = path.bounds();
 
                     Rectangle {
@@ -495,7 +545,14 @@ impl Engine {
                     } * transformation
                 };
 
-                let clip_mask = None;
+                let Some(clip_bounds) =
+                    layer_bounds.intersection(&physical_bounds)
+                else {
+                    return;
+                };
+
+                let clip_mask =
+                    (physical_bounds != clip_bounds).then_some(clip_mask as &_);
 
                 pixels.stroke_path(
                     path,
