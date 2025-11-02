@@ -575,7 +575,7 @@ impl Engine {
     ) {
         match image {
             #[cfg(feature = "image")]
-            Image::Raster(raster, bounds) => {
+            Image::Raster { image, bounds, .. } => {
                 let physical_bounds = *bounds * _transformation;
 
                 if !_clip_bounds.intersects(&physical_bounds) {
@@ -586,7 +586,7 @@ impl Engine {
                     .then_some(_clip_mask as &_);
 
                 let center = physical_bounds.center();
-                let radians = f32::from(raster.rotation);
+                let radians = f32::from(image.rotation);
 
                 let transform = into_transform(_transformation).post_rotate_at(
                     radians.to_degrees(),
@@ -595,17 +595,17 @@ impl Engine {
                 );
 
                 self.raster_pipeline.draw(
-                    &raster.handle,
-                    raster.filter_method,
+                    &image.handle,
+                    image.filter_method,
                     *bounds,
-                    raster.opacity,
+                    image.opacity,
                     _pixels,
                     transform,
                     clip_mask,
                 );
             }
             #[cfg(feature = "svg")]
-            Image::Vector(svg, bounds) => {
+            Image::Vector { svg, bounds, .. } => {
                 let physical_bounds = *bounds * _transformation;
 
                 if !_clip_bounds.intersects(&physical_bounds) {
