@@ -99,6 +99,7 @@ where
     on_input: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_paste: Option<Box<dyn Fn(String) -> Message + 'a>>,
     on_submit: Option<Message>,
+    on_focus: Option<Message>,
     class: Theme::Class<'a>,
     last_status: Option<Status>,
 }
@@ -134,6 +135,7 @@ where
             on_input: None,
             on_paste: None,
             on_submit: None,
+            on_focus: None,
             class: Theme::default(),
             last_status: None,
         }
@@ -194,6 +196,13 @@ where
     /// the [`TextInput`], if `Some`.
     pub fn on_paste_maybe(mut self, on_paste: Option<impl Fn(String) -> Message + 'a>) -> Self {
         self.on_paste = on_paste.map(|f| Box::new(f) as _);
+        self
+    }
+
+    /// Sets the message that should be produced when the [`TextInput`] is
+    /// focused.
+    pub fn on_focus(mut self, message: Message) -> Self {
+        self.on_focus = Some(message);
         self
     }
 
@@ -344,6 +353,19 @@ where
         let state = state::<Renderer>(tree);
         let is_disabled = self.on_input.is_none();
 
+        if state.input.is_focused() {
+            if let Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) = event {
+                match key {
+                    keyboard::Key::Named(keyboard::key::Named::ArrowUp)
+                    | keyboard::Key::Named(keyboard::key::Named::ArrowDown) => {
+                        shell.capture_event();
+                        return;
+                    }
+                    _ => {}
+                }
+            }
+        }
+
         if let Some(on_input) = &self.on_input {
             let edit = state
                 .input
@@ -357,7 +379,6 @@ where
 
                     editor::Binding::from_key_press(key_press)
                 });
-
             if let Some(edit) = edit {
                 let on_input = if let Some(on_paste) = &self.on_paste
                     && edit.is_paste
@@ -369,6 +390,18 @@ where
 
                 state.value = state.input.value();
                 state.transaction = Some(shell.publish_and_track(on_input(state.value.clone())));
+            }
+        }
+
+        let new_focus = state.input.is_focused();
+
+        if state.is_focused != Some(new_focus) {
+            state.is_focused = Some(new_focus);
+
+            if new_focus {
+                if let Some(on_focus) = self.on_focus.as_ref() {
+                    shell.publish(on_focus.clone());
+                }
             }
         }
 
@@ -474,6 +507,7 @@ struct State<R: text::Renderer> {
     input: text::Input<R>,
     value: String,
     transaction: Option<shell::Tracking>,
+    is_focused: Option<bool>,
 }
 
 fn state<Renderer: text::Renderer + 'static>(tree: &mut Tree) -> &mut State<Renderer> {
@@ -487,6 +521,7 @@ impl<R: text::Renderer> State<R> {
             input: text::Input::new(),
             value: String::new(),
             transaction: None,
+            is_focused: Some(false),
         }
     }
 }
