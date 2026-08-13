@@ -323,6 +323,7 @@ where
                 line_height: self.line_height,
                 alignment: self.alignment,
                 multiline: self.multiline,
+                is_secure: self.is_secure,
             },
         )
     }
@@ -371,6 +372,7 @@ where
                 .input
                 .update(event, layout.bounds(), cursor, shell, |key_press| {
                     if let Some(on_submit) = &self.on_submit
+                        && key_press.is_focused
                         && key_press.modified_key
                             == keyboard::Key::Named(keyboard::key::Named::Enter)
                     {
@@ -381,7 +383,7 @@ where
                 });
             if let Some(edit) = edit {
                 let on_input = if let Some(on_paste) = &self.on_paste
-                    && edit.is_paste
+                    && edit.has_pasted
                 {
                     on_paste
                 } else {
