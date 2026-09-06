@@ -2,6 +2,7 @@ use crate::alignment;
 use crate::image::{self, Image};
 use crate::renderer::{self, Renderer};
 use crate::svg;
+use crate::text::highlighter;
 use crate::text::{self, Text};
 use crate::{Background, Color, Font, Pixels, Point, Rectangle, Size, Transformation};
 
@@ -17,7 +18,7 @@ impl Renderer for () {
     fn fill_quad(&mut self, _quad: renderer::Quad, _background: impl Into<Background>) {}
 
     fn allocate_image(
-        &mut self,
+        &self,
         handle: &image::Handle,
         callback: impl FnOnce(Result<image::Allocation, image::Error>) + Send + 'static,
     ) {
@@ -215,17 +216,17 @@ impl text::Editor for () {
         _new_wrapping: text::Wrapping,
         _new_alignment: text::Alignment,
         _new_hint_factor: Option<f32>,
-        _new_highlighter: &mut impl text::Highlighter,
+        _new_parser: &mut impl text::Parser,
     ) {
     }
 
     fn overwrite(&mut self, _new_text: &str) {}
 
-    fn highlight<H: text::Highlighter>(
+    fn highlight<P: text::Parser>(
         &mut self,
         _font: Self::Font,
-        _highlighter: &mut H,
-        _format_highlight: impl Fn(&H::Highlight) -> text::highlighter::Format<Self::Font>,
+        _parser: &mut P,
+        _highlighter: impl Fn(P::Output) -> highlighter::Style,
     ) {
     }
 

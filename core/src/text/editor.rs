@@ -5,7 +5,7 @@ use crate::keyboard;
 use crate::keyboard::key;
 use crate::mouse;
 use crate::renderer;
-use crate::text::highlighter::{self, Highlighter};
+use crate::text::highlighter;
 use crate::text::{self, Alignment, LineHeight, Position, Wrapping};
 use crate::time::{Duration, Instant};
 use crate::widget::operation::{Focusable, TextInput};
@@ -67,18 +67,18 @@ pub trait Editor: Sized + Default {
         new_wrapping: Wrapping,
         new_alignment: Alignment,
         new_hint_factor: Option<f32>,
-        new_highlighter: &mut impl Highlighter,
+        new_parser: &mut impl text::Parser,
     );
 
     /// Overwrites the current contents of the [`Editor`].
     fn overwrite(&mut self, new_text: &str);
 
-    /// Runs a text [`Highlighter`] in the [`Editor`].
-    fn highlight<H: Highlighter>(
+    /// Runs a [`text::Highlighter`] in the [`Editor`].
+    fn highlight<P: text::Parser>(
         &mut self,
         font: Self::Font,
-        highlighter: &mut H,
-        format_highlight: impl Fn(&H::Highlight) -> highlighter::Format<Self::Font>,
+        parser: &mut P,
+        highlight: impl Fn(P::Output) -> highlighter::Style,
     );
 
     /// Returns an iterator of the text of the lines in the [`Editor`].
@@ -832,27 +832,27 @@ impl<Message> Binding<Message> {
 
         match modified_key.as_ref() {
             keyboard::Key::Named(key::Named::Enter) => Some(Self::Enter),
-            keyboard::Key::Named(key::Named::Backspace) => Some(if modifiers.command() {
-                if modifiers.shift() {
+            keyboard::Key::Named(key::Named::Backspace) => Some(
+                if modifiers.macos_command() || (modifiers.command() && modifiers.shift()) {
                     Self::BackspaceLine
-                } else {
+                } else if modifiers.jump() {
                     Self::BackspaceWord
-                }
-            } else {
-                Self::Backspace
-            }),
+                } else {
+                    Self::Backspace
+                },
+            ),
             keyboard::Key::Named(key::Named::Delete)
                 if text.is_none() || text.as_deref() == Some("\u{7f}") =>
             {
-                Some(if modifiers.command() {
-                    if modifiers.shift() {
+                Some(
+                    if modifiers.macos_command() || (modifiers.command() && modifiers.shift()) {
                         Self::DeleteLine
-                    } else {
+                    } else if modifiers.jump() {
                         Self::DeleteWord
-                    }
-                } else {
-                    Self::Delete
-                })
+                    } else {
+                        Self::Delete
+                    },
+                )
             }
             keyboard::Key::Named(key::Named::Escape) => Some(Self::Unfocus),
             _ => {

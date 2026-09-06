@@ -817,7 +817,9 @@ async fn run_instance<P>(
 
                             redraw_count += 1;
 
-                            if !messages.is_empty() {
+                            if !messages.is_empty()
+                                || matches!(state, user_interface::State::Outdated)
+                            {
                                 let caches: FxHashMap<_, _> =
                                     ManuallyDrop::into_inner(user_interfaces)
                                         .into_iter()
@@ -1243,7 +1245,7 @@ where
     let mut outputs = Vec::new();
 
     while !messages.is_empty() {
-        for message in messages.drain() {
+        for (message, _receipt) in messages.drain() {
             let task = runtime.enter(|| program.update(message));
 
             if let Some(mut stream) = runtime::task::into_stream(task) {
