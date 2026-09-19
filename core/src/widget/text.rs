@@ -248,6 +248,7 @@ where
         &mut self,
         _tree: &mut Tree,
         layout: Layout<'_>,
+        _viewport: &Rectangle,
         _renderer: &Renderer,
         operation: &mut dyn super::Operation,
     ) {
@@ -280,8 +281,8 @@ impl Default for Format {
             size: None,
             line_height: None,
             font: None,
-            width: Length::Shrink,
-            height: Length::Shrink,
+            width: Length::Fit,
+            height: Length::Fit,
             align_x: text::Alignment::Default,
             align_y: alignment::Vertical::Top,
             shaping: Shaping::default(),
@@ -303,7 +304,7 @@ where
     Renderer: text::Renderer,
 {
     layout::sized(limits, format.width, format.height, |limits| {
-        let bounds = limits.max();
+        let bounds = limits.bounds();
 
         let size = format.size.unwrap_or_else(|| renderer.text_size());
         let font = format.font.unwrap_or_else(|| renderer.font());

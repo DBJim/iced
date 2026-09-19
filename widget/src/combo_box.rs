@@ -191,7 +191,7 @@ where
             ellipsis: text::Ellipsis::End,
             input_class: <Theme as Catalog>::default_input(),
             menu_class: <Theme as Catalog>::default_menu(),
-            menu_height: Length::Shrink,
+            menu_height: Length::Fit,
             last_status: None,
         }
     }
@@ -744,7 +744,7 @@ where
 
                 vec![menu.overlay(
                     layout.position() + translation,
-                    *viewport,
+                    *viewport + translation,
                     bounds.height,
                     self.menu_height,
                 )]
@@ -758,6 +758,7 @@ where
         &mut self,
         tree: &mut widget::Tree,
         layout: Layout<'_>,
+        _viewport: &Rectangle,
         _renderer: &Renderer,
         operation: &mut dyn widget::Operation,
     ) {

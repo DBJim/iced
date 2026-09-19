@@ -362,7 +362,7 @@ where
         let option_text = Text {
             content: "",
             bounds: Size::new(
-                limits.max().width,
+                limits.bounds().width,
                 line_height.to_absolute(text_size).into(),
             ),
             size: text_size,
@@ -695,6 +695,22 @@ where
         }
     }
 
+    fn operate(
+        &mut self,
+        _tree: &mut Tree,
+        layout: Layout<'_>,
+        _viewport: &Rectangle,
+        _renderer: &Renderer,
+        operation: &mut dyn crate::core::widget::Operation,
+    ) {
+        let selected = self.selected.as_ref().map(Borrow::borrow);
+        let label = selected.map(&self.to_string);
+
+        if let Some(label) = label.or_else(|| self.placeholder.clone()) {
+            operation.text(None, layout.bounds(), &label);
+        }
+    }
+
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
@@ -738,7 +754,7 @@ where
 
             vec![menu.overlay(
                 layout.position() + translation,
-                *viewport,
+                *viewport + translation,
                 bounds.height,
                 self.menu_height,
             )]

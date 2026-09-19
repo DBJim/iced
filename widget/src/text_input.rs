@@ -285,7 +285,7 @@ where
     fn size(&self) -> Size<Length> {
         Size {
             width: self.width,
-            height: Length::Shrink,
+            height: Length::Fit,
         }
     }
 
@@ -329,6 +329,7 @@ where
         &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
+        _viewport: &Rectangle,
         _renderer: &Renderer,
         operation: &mut dyn Operation,
     ) {
@@ -632,7 +633,7 @@ pub fn default(theme: &Theme, status: Status) -> Style {
     let palette = theme.palette();
 
     let active = Style {
-        background: Background::Color(palette.background.base.color),
+        background: Background::Color(palette.background.weakest.color),
         border: Border {
             radius: 2.0.into(),
             width: 1.0,
@@ -647,7 +648,7 @@ pub fn default(theme: &Theme, status: Status) -> Style {
         Status::Active => active,
         Status::Hovered => Style {
             border: Border {
-                color: palette.background.base.text,
+                color: palette.background.weakest.text,
                 ..active.border
             },
             ..active
@@ -662,7 +663,7 @@ pub fn default(theme: &Theme, status: Status) -> Style {
         Status::Disabled => Style {
             background: Background::Color(palette.background.weak.color),
             value: active.placeholder,
-            placeholder: palette.background.strongest.color,
+            placeholder: palette.background.base.color,
             ..active
         },
     }

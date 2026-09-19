@@ -185,12 +185,13 @@ where
         &mut self,
         tree: &mut widget::Tree,
         layout: Layout<'_>,
+        viewport: &Rectangle,
         renderer: &Renderer,
         operation: &mut dyn widget::Operation,
     ) {
         self.content
             .as_widget_mut()
-            .operate(tree, layout, renderer, operation);
+            .operate(tree, layout, viewport, renderer, operation);
     }
 
     fn overlay<'a>(
@@ -206,7 +207,7 @@ where
         let translation = self
             .translate
             .as_ref()
-            .map(|translate| translate(bounds + offset, *viewport))
+            .map(|translate| translate(bounds + offset, *viewport + offset))
             .unwrap_or(Vector::ZERO);
 
         if self.scale > 1.0 || translation != Vector::ZERO {
@@ -225,7 +226,7 @@ where
                 float: self,
                 state,
                 layout,
-                viewport: *viewport,
+                viewport: *viewport + offset,
                 transformation,
             }))]
         } else {
